@@ -332,6 +332,11 @@ struct Cache {
         default: break;
         }
     }
+    void refresh() {
+        for (unsigned i = 0; i < 64; ++i) {
+            search(lines[i].id);
+        }
+    }
 };
 
 #endif // CACHE_H
