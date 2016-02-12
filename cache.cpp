@@ -255,3 +255,36 @@ void Cache::refresh() {
     }
 }
 
+unsigned Cache::bootstrap() {
+    Ele::Data knowns[64];
+    unsigned head = 0, tail = 64;
+    Line* it = &lines[63];
+    do {
+        auto ele = it->front();
+        if (ele.err) {
+            knowns[tail-1].key = it->id;
+            --tail;
+        } else {
+            knowns[head] = ele.data;
+            ++head;
+        }
+        --it;
+    } while (head != tail);
+    if (head == 0) {
+        return head;
+    }
+    for (unsigned i = head; i < 64; ++i) {
+       for (unsigned j = 0; j < head; ++j) {
+           auto have = knowns[j].key;
+           auto want = knowns[i].key;
+           auto ele = Cache::get(knowns[j], prefix(have, want));
+           if (ele.err == GetErr::Ok) {
+               insert(ele.data.key, ele.data.value);
+               knowns[j] = ele.data;
+               ++head;
+               break;
+           }
+       }
+    }
+    return head;
+}

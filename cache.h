@@ -76,8 +76,11 @@ struct Cache {
     bool remove(const Ele::Key key, const Ele::Val& value);
     int conn(const Ele::Val& value);
     Result<GetErr, Ele::Data> get(const Ele::Data& ele, const unsigned n);
+
     void process(const Ele::Val& value, const Msg& msg);
+    unsigned bootstrap();
     void refresh();
+
 };
 
 #endif // CACHE_H
