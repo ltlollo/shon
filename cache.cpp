@@ -33,7 +33,7 @@ bool Line::insert(const Ele::Key key, const Ele::Val& value) {
         return false;
     }
     it->key.store(key, relax);
-    init->value = value;
+    it->value = value;
     curr.store(it, relax);
     return true;
 }
