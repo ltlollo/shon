@@ -280,7 +280,7 @@ unsigned Cache::bootstrap() {
            auto ele = get(knowns[j], prefix(have, want));
            if (ele.err == GetErr::Ok) {
                insert(ele.data.key, ele.data.value);
-               knowns[j] = ele.data;
+               knowns[i] = ele.data;
                ++head;
                break;
            }
