@@ -277,7 +277,7 @@ unsigned Cache::bootstrap() {
        for (unsigned j = 0; j < head; ++j) {
            auto have = knowns[j].key;
            auto want = knowns[i].key;
-           auto ele = Cache::get(knowns[j], prefix(have, want));
+           auto ele = get(knowns[j], prefix(have, want));
            if (ele.err == GetErr::Ok) {
                insert(ele.data.key, ele.data.value);
                knowns[j] = ele.data;
