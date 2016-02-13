@@ -255,8 +255,7 @@ void Cache::refresh() {
     }
 }
 
-unsigned Cache::bootstrap() {
-    Ele::Data knowns[64];
+unsigned partition(Line lines[64], Ele::Data knowns[64]) {
     unsigned head = 0, tail = 64;
     Line* it = &lines[63];
     do {
@@ -270,21 +269,33 @@ unsigned Cache::bootstrap() {
         }
         --it;
     } while (head != tail);
-    if (head == 0) {
-        return head;
+    return head;
+}
+
+unsigned Cache::bootstrap() {
+    Ele::Data knowns[64];
+    unsigned head;
+    if ((head = partition(lines, knowns)) == 0) {
+        return 0;
     }
-    for (unsigned i = head; i < 64; ++i) {
-       for (unsigned j = 0; j < head; ++j) {
-           auto have = knowns[j].key;
-           auto want = knowns[i].key;
-           auto ele = get(knowns[j], prefix(have, want));
-           if (ele.err == GetErr::Ok) {
-               insert(ele.data.key, ele.data.value);
-               knowns[i] = ele.data;
-               ++head;
-               break;
+    auto changed = [&]() {
+        for (unsigned i = head; i < 64; ++i) {
+           for (unsigned j = 0; j < head; ++j) {
+               auto have = knowns[j].key;
+               auto want = knowns[i].key;
+               auto ele = get(knowns[j], prefix(have, want));
+               if (ele.err == GetErr::Ok) {
+                   insert(ele.data.key, ele.data.value);
+                   if (i != head) {
+                       knowns[i] = knowns[head];
+                   }
+                   knowns[head++] = ele.data;
+                   return true;;
+               }
            }
-       }
-    }
+        }
+        return false;
+    };
+    while (changed());
     return head;
 }

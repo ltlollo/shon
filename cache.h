@@ -83,4 +83,6 @@ struct Cache {
 
 };
 
+unsigned partition(Line lines[64], Ele::Data knowns[64]);
+
 #endif // CACHE_H
