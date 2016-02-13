@@ -10,7 +10,7 @@ struct Addr {
         if (addr[0] != rhs.addr[0]) {
             return false;
         }
-        return memcmp(addr+1, rhs.addr+1, addr[0] ? 16 : 4);
+        return !bcmp(addr+1, rhs.addr+1, addr[0] ? 16 : 4);
     }
 };
 
