@@ -13,16 +13,18 @@
 constexpr uint8_t Ok        = 0;
 constexpr uint8_t None      = 1;
 constexpr uint8_t Broken    = 2;
+constexpr uint8_t Self      = 3;
 
 enum class SearchErr : uint8_t {
     Ok      = Ok,
     None    = None,
-    Self    = 2,
+    Self    = Self,
+    Broken  = Broken,
 };
 enum class GetErr : uint8_t {
     Ok      = Ok,
     None    = None,
-    Broken  = 2,
+    Broken  = Broken,
 };
 
 enum Op : uint8_t {
@@ -70,7 +72,6 @@ struct Cache {
     Cache(Ele::Key id);
 
     int line(Ele::Key key);
-    Option<Ele::Data> request(const Ele::Data& who, const unsigned what);
     Result<SearchErr, Ele::Val> search(Ele::Key key);
     bool insert(const Ele::Key key, const Ele::Val& value);
     bool remove(const Ele::Key key, const Ele::Val& value);

@@ -119,15 +119,6 @@ int Cache::line(Ele::Key key) {
     return (res == 64) ? -1 : res;
 }
 
-Option<Ele::Data> Cache::request(const Ele::Data& who, const unsigned what) {
-    Option<Ele::Data> res = {};
-    if (who.key == id) {
-        return res;
-    }
-    insert(who.key, who.value);
-    return res = lines[what].front();
-}
-
 Result<SearchErr, Ele::Val> Cache::search(Ele::Key key) {
     if (id == key) {
         return {SearchErr::Self, {}};
@@ -141,22 +132,27 @@ Result<SearchErr, Ele::Val> Cache::search(Ele::Key key) {
     }
     Result<GetErr, Ele::Data> resp;
     do {
+        if (ele.err) {
+            return {SearchErr::None, {}};
+        }
         resp = get(ele.data, prefix(resp.data.key, key));
         if (resp.err == GetErr::Ok) {
             ele.data = resp.data;
             insert(ele.data.key, ele.data.value);
         } else {
-            ele.err = true;
             if (resp.err == GetErr::Broken) {
                 remove(ele.data.key, ele.data.value);
-            };
+                ele.err = Broken;
+            } else {
+                ele.err = None;
+            }
             break;
         }
     } while (64 - prefix(ele.data.key, key));
-    if (!ele.err) {
-        return {SearchErr::Ok, ele.data.value};
-    } else {
-        return {SearchErr::None, {}};
+    switch (ele.err) {
+        case Ok:    return {SearchErr::Ok, ele.data.value};
+        case None:  return {SearchErr::None, {}};
+        default:    return {SearchErr::Broken, {}};
     }
 }
 
@@ -274,28 +270,38 @@ unsigned partition(Line lines[64], Ele::Data knowns[64]) {
 
 unsigned Cache::bootstrap() {
     Ele::Data knowns[64];
-    unsigned head;
-    if ((head = partition(lines, knowns)) == 0) {
-        return 0;
-    }
+    unsigned known = partition(lines, knowns);
     auto changed = [&]() {
-        for (unsigned i = head; i < 64; ++i) {
-           for (unsigned j = 0; j < head; ++j) {
+        if (known == 0) {
+            return false;
+        }
+        for (unsigned i = known; i < 64; ++i) {
+           for (unsigned j = 0; j < known; ++j) {
                auto have = knowns[j].key;
                auto want = knowns[i].key;
                auto ele = get(knowns[j], prefix(have, want));
                if (ele.err == GetErr::Ok) {
                    insert(ele.data.key, ele.data.value);
-                   if (i != head) {
-                       knowns[i] = knowns[head];
+                   if (i != known) {
+                       knowns[i] = knowns[known];
                    }
-                   knowns[head++] = ele.data;
-                   return true;;
+                   knowns[known++] = ele.data;
+                   return true;
+               } else if (ele.err == GetErr::Broken) {
+                   remove(knowns[i].key, knowns[i].value);
+                   auto ele = lines[i].front();
+                   if (ele.err) {
+                        knowns[i] = knowns[known-1];
+                        --known;
+                   } else {
+                        knowns[i] = ele.data;
+                   }
+                   return true;
                }
            }
         }
         return false;
     };
     while (changed());
-    return head;
+    return known;
 }
