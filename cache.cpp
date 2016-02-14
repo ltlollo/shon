@@ -256,22 +256,23 @@ void Cache::refresh() {
 }
 
 void Cache::probe(Line& line) {
-    Option<Ele::Data> ele;
     Msg msg = {Probe, {}, id, {}};
-    do {
-        ele = line.front();
+    auto changed = [&]() {
+        auto ele = line.front();
         if (ele.err) {
-            return;
+            return false;
         }
         if (sendmsg(ele.data.value, msg)) {
             remove(ele.data.key, ele.data.value);
-            continue;
+            return true;
         }
         if (recvmsg(ele.data.value, msg)) {
             remove(ele.data.key, ele.data.value);
-            continue;
+            return true;
         }
-    } while(true);
+        return false;
+    };
+    while(changed());
 }
 
 unsigned partition(Line lines[64], Ele::Data knowns[64]) {
