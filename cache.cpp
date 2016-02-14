@@ -246,9 +246,32 @@ void Cache::process(const Ele::Val& value, const Msg& msg) {
 }
 
 void Cache::refresh() {
-    for (unsigned i = 0; i < 64; ++i) {
-        search(lines[i].id);
+    for (auto& line: lines) {
+        probe(line);
     }
+    bootstrap();
+    for (const auto& line: lines) {
+        search(line.id);
+    }
+}
+
+void Cache::probe(Line& line) {
+    Option<Ele::Data> ele;
+    Msg msg = {Probe, {}, id, {}};
+    do {
+        ele = line.front();
+        if (ele.err) {
+            return;
+        }
+        if (sendmsg(ele.data.value, msg)) {
+            remove(ele.data.key, ele.data.value);
+            continue;
+        }
+        if (recvmsg(ele.data.value, msg)) {
+            remove(ele.data.key, ele.data.value);
+            continue;
+        }
+    } while(true);
 }
 
 unsigned partition(Line lines[64], Ele::Data knowns[64]) {

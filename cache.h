@@ -80,6 +80,7 @@ struct Cache {
 
     void process(const Ele::Val& value, const Msg& msg);
     unsigned bootstrap();
+    void probe(Line& line);
     void refresh();
 
 };
